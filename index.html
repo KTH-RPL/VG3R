@@ -3,22 +3,177 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="VG3R turns a pretrained video generation model into a feed-forward 3D reconstruction model.">
 <title>VG3R: Video Generation Model for Feed-Forward 3D Reconstruction</title>
-<style>
-  :root { --ink: #2b2b2b; --sub: #5b6573; --ours: #c4572a; }
-  html, body { margin: 0; height: 100%; background: #ffffff; color: var(--ink); }
-  body { display: flex; align-items: center; justify-content: center; padding: 0 16px; box-sizing: border-box;
-         font: 16px/1.6 "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif; text-align: center; }
-  h1 { font-size: 2rem; line-height: 1.3; font-weight: 600; margin: 0 0 1.2rem; max-width: 860px; }
-  h1 .name { color: var(--ours); font-weight: 800; }
-  p { font-size: 1.25rem; color: var(--sub); margin: 0; letter-spacing: 0.02em; }
-  @media (max-width: 600px) { h1 { font-size: 1.45rem; } p { font-size: 1.1rem; } }
-</style>
+<link rel="icon" href="static/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
-<main>
+<header class="hero wide">
   <h1><span class="name">VG3R</span>: Video Generation Model for Feed-Forward 3D Reconstruction</h1>
-  <p>Coming soon.</p>
-</main>
+  <div class="authors">
+    <span>Jingong Chen<sup>1,3†*</sup></span>
+    <span><a href="https://kin-zhang.github.io/">Qingwen Zhang</a><sup>2†*</sup></span>
+    <span><a href="https://linlianjiang.github.io/">Linlian Jiang</a><sup>4,5</sup></span>
+    <span><a href="https://sites.google.com/site/xinxinzuohome/">Xinxin Zuo</a><sup>4</sup></span>
+    <span><a href="https://kywang.github.io/">Yang Wang</a><sup>4,5</sup></span>
+    <i class="break"></i>
+    <span><a href="https://chulwoopack.com/">Chulwoo Pack</a><sup>1</sup></span>
+    <span><a href="https://www.aalto.fi/en/people/kyle-gao">Kyle Gao</a><sup>3</sup></span>
+    <span><a href="https://www.kth.se/profile/patric">Patric Jensfelt</a><sup>2‡</sup></span>
+    <span><a href="https://www.sdstate.edu/directory/kwanghee-won">Kwanghee Won</a><sup>1‡*</sup></span>
+  </div>
+  <div class="affils">
+    <span><sup>1</sup>South Dakota State University</span>
+    <span><sup>2</sup>KTH Royal Institute of Technology</span>
+    <span><sup>3</sup>Aalto University</span>
+    <i class="break"></i>
+    <span><sup>4</sup>Concordia University</span>
+    <span><sup>5</sup>Mila – Quebec AI Institute</span>
+  </div>
+  <div class="notes"><sup>&dagger;</sup>Equal contribution &nbsp;&nbsp; <sup>&Dagger;</sup>Equal advising &nbsp;&nbsp; <sup>*</sup>Corresponding author</div>
+  <nav class="links">
+    <a class="pill" href="https://arxiv.org/pdf/2611.28520">Paper</a>
+    <a class="pill" href="https://arxiv.org/abs/2611.28520">arXiv</a>
+    <a class="pill" href="https://github.com/KTH-RPL/VG3R">Code</a>
+    <a class="pill" href="https://huggingface.co/Jingong/VG3R">&#129303; Model</a>
+    <a class="pill" href="https://github.com/KTH-RPL/VG3R#demos">Demo</a>
+    <a class="pill" href="#bibtex">BibTeX</a>
+  </nav>
+</header>
+
+<section class="narrow">
+  <p class="tldr"><b>TL;DR</b>&nbsp; VG3R turns a pretrained video generation model (Wan2.1) into a feed-forward 3D reconstruction
+    model: from a video, it predicts the depth and the camera of every frame without iterative denoising.</p>
+</section>
+
+<section class="wide teaser">
+  <video id="teaser" src="static/video/vg3r_video.mp4" poster="static/video/vg3r_video_poster.jpg" controls muted loop playsinline
+         preload="metadata"></video>
+  <p class="caption">VG3R on a ScanNet video. From left to right: the input video; VG3R, a video generation model (Wan2.1 with
+    LoRA) whose blocks are read by the VAE decoder with ClipShift and by the LayerTap camera head; the depth and the camera that VG3R
+    predicts for each frame; the 3D reconstruction built from the predicted depth and cameras of the frames so far, then shown from
+    other viewpoints. Everything shown is predicted by VG3R; no ground truth is used.</p>
+</section>
+
+<section class="narrow">
+  <h2>Abstract</h2>
+  <p id="abstract" class="abstract"></p>
+</section>
+
+<section id="gallery" class="wide">
+  <h2>Interactive results</h2>
+  <p class="lead">Point clouds and cameras predicted by VG3R. Each scene is built frame by frame when it opens (press &#9654; to
+    replay); camera frustums are colored by time, from dark red (first frame) to yellow (last frame). Drag to orbit, right-drag or
+    shift-drag to pan, scroll to zoom, double-click to reset the view. For the web, the point clouds are subsampled; on ScanNet, points
+    at depth discontinuities are also removed.</p>
+  <div class="thumbs" id="gallery-thumbs"></div>
+  <div class="viewer-wrap">
+    <div class="pcd" id="gallery-viewer"></div>
+    <div class="controls">
+      <button id="gallery-play" title="Replay">&#9654; Replay</button>
+      <button id="gallery-reset" title="Reset the view">Reset view</button>
+      <label>Point size <input type="range" id="gallery-size" min="1" max="8" step="0.5" value="3"></label>
+      <span class="info" id="gallery-info"></span>
+    </div>
+  </div>
+</section>
+
+<section id="compare" class="wide">
+  <h2>Same video, every method</h2>
+  <p class="lead">Each method fuses the point maps of all frames with its own predicted cameras, without confidence filtering or other
+    post-processing, and is aligned to the ground truth by one similarity transform, as in Fig. 4 of the paper. All panels share one
+    camera: moving one moves all. The point clouds are subsampled for the web.</p>
+  <div class="tabs" id="compare-groups"></div>
+  <div class="tabs small" id="compare-clips"></div>
+  <div class="viewer-wrap">
+    <div class="pcd tall" id="compare-viewer"></div>
+    <div class="controls">
+      <button id="compare-reset">Reset view</button>
+      <label>Point size <input type="range" id="compare-size" min="1" max="8" step="0.5" value="3"></label>
+      <span class="info" id="compare-info"></span>
+    </div>
+  </div>
+</section>
+
+<section id="videodepth" class="wide">
+  <h2>Video depth</h2>
+  <p class="lead">Inverse depth of the methods built on video generation models, after the alignment of Tab. 1 of the paper (one fit per
+    video) and on one color range per video from the ground truth, as in Fig. 5. Played as videos, the panels also show how stable each
+    prediction is over time.</p>
+  <div class="tabs" id="vd-tabs"></div>
+  <video id="vd-video" controls muted loop playsinline preload="metadata"></video>
+  <p class="caption" id="vd-caption"></p>
+</section>
+
+<section id="trajectories" class="wide">
+  <h2>Camera trajectories</h2>
+  <p class="lead">Predicted camera trajectories over the ground-truth point cloud, with the ground-truth cameras in black, on
+    sequences of Figs. 6 and 10 of the paper. Every trajectory is aligned to the ground truth by one
+    similarity transform on the camera centers, and each button gives the ATE of its method. Choose a sequence and click a method to
+    show or hide its trajectory; drag to orbit, right-drag or shift-drag to pan, scroll to zoom, double-click to reset the view.</p>
+  <div class="tabs" id="traj-groups"></div>
+  <div class="tabs small" id="traj-clips"></div>
+  <div class="viewer-wrap">
+    <div class="chips" id="traj-chips"></div>
+    <div class="pcd tall" id="traj-viewer"></div>
+    <div class="controls">
+      <label><input type="checkbox" id="traj-frusta" checked> Camera frustums</label>
+      <button id="traj-reset">Reset view</button>
+      <label>Point size <input type="range" id="traj-size" min="1" max="8" step="0.5" value="2.5"></label>
+      <span class="info" id="traj-info"></span>
+    </div>
+  </div>
+  <p class="lead figs-lead">Figs. 6 (top) and 10 of the paper. Left panel of each pair: <span class="sw" style="background:#3E78B2"></span> GeometryCrafter, <span class="sw" style="background:#7B5EA7"></span>
+    Aether and <span class="sw" style="background:#C9A227"></span> Geo4D; right panel: <span class="sw" style="background:#C4572A"></span>
+    VG3R; the panels give the ATE in this order. Click a figure to enlarge it.</p>
+  <div id="traj-imgs"></div>
+</section>
+
+<section class="narrow" id="method">
+  <h2>How it works</h2>
+  <img class="figure" src="static/img/method.jpg" alt="Overview of VG3R">
+  <div class="cards">
+    <div class="card"><h3>A video generation model as the backbone</h3>
+      <p>VG3R encodes the input video with the frozen VAE of Wan2.1 and processes its latents with the LoRA-adapted diffusion
+        transformer at a fixed timestep, as a deterministic feed-forward regressor without iterative denoising.</p></div>
+    <div class="card"><h3>ClipShift: clip-level shift prediction</h3>
+      <p>The decoded inverse depth is normalized per clip and misses a shift that distorts the scene. The shift is invariant to scene
+        scale and shared by all frames of the clip, so ClipShift predicts a single shift from the tokens of the last block and recovers
+        the geometry up to scale.</p></div>
+    <div class="card"><h3>LayerTap: multi-layer camera head</h3>
+      <p>Camera estimation benefits from features at multiple layers that capture camera motion. LayerTap combines the tokens
+        of intermediate blocks 10 and 20 with those of the final block and predicts the camera of every frame relative to the first.</p></div>
+  </div>
+</section>
+
+<section class="wide" id="results">
+  <h2>Quantitative results</h2>
+  <p class="lead">Table 1 of the paper: comparison on video benchmarks. More quantitative results are in the paper.</p>
+  <img class="figure table" src="static/img/table_main.png" alt="Table 1 of the paper">
+</section>
+
+<section class="narrow" id="bibtex">
+  <h2>BibTeX</h2>
+  <div class="bibtex">
+    <button type="button" id="copy-bibtex">Copy</button>
+<pre id="bibtex-text">@article{chen2026vg3r,
+  title   = {{VG3R}: Video Generation Model for Feed-Forward {3D} Reconstruction},
+  author  = {Chen, Jingong and Zhang, Qingwen and Jiang, Linlian and
+             Zuo, Xinxin and Wang, Yang and Pack, Chulwoo and
+             Gao, Kyle and Jensfelt, Patric and Won, Kwanghee},
+  journal = {arXiv preprint arXiv:2611.28520},
+  year    = {2026}
+}</pre>
+  </div>
+</section>
+
+<footer class="narrow">
+  <p>&copy; 2026 The VG3R authors.</p>
+</footer>
+
+<script src="static/data/manifest.js"></script>
+<script src="static/js/viewer.js"></script>
+<script src="static/js/app.js"></script>
 </body>
 </html>
