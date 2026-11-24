@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use VG3R, please cite the paper below."
+title: "VG3R: Video Generation Model for Feed-Forward 3D Reconstruction"
+type: software
+repository-code: "https://github.com/KTH-RPL/VG3R"
+url: "https://kth-rpl.github.io/VG3R/"
+license-url: "https://github.com/KTH-RPL/VG3R/blob/main/LICENSE"
+authors:
+  - {family-names: Chen, given-names: Jingong}
+  - {family-names: Zhang, given-names: Qingwen}
+  - {family-names: Jiang, given-names: Linlian}
+  - {family-names: Zuo, given-names: Xinxin}
+  - {family-names: Wang, given-names: Yang}
+  - {family-names: Pack, given-names: Chulwoo}
+  - {family-names: Gao, given-names: Kyle}
+  - {family-names: Jensfelt, given-names: Patric}
+  - {family-names: Won, given-names: Kwanghee}
+preferred-citation:
+  type: article
+  title: "VG3R: Video Generation Model for Feed-Forward 3D Reconstruction"
+  journal: "arXiv preprint arXiv:2611.28520"
+  url: "https://arxiv.org/abs/2611.28520"
+  identifiers:
+    - type: doi
+      value: "10.48550/arXiv.2611.28520"
+  year: 2026
+  authors:
+    - {family-names: Chen, given-names: Jingong}
+    - {family-names: Zhang, given-names: Qingwen}
+    - {family-names: Jiang, given-names: Linlian}
+    - {family-names: Zuo, given-names: Xinxin}
+    - {family-names: Wang, given-names: Yang}
+    - {family-names: Pack, given-names: Chulwoo}
+    - {family-names: Gao, given-names: Kyle}
+    - {family-names: Jensfelt, given-names: Patric}
+    - {family-names: Won, given-names: Kwanghee}

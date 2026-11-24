@@ -1,0 +1,2 @@
+gradio>=5.31,<6
+trimesh>=4.0

@@ -1,0 +1,13 @@
+# Evaluation (in addition to the vg3r package: pip install -e .)
+numpy
+scipy
+opencv-python           # resizing as the pi^3 evaluation code does
+omegaconf               # the data configs of the pi^3 evaluation code
+rootutils               # imported by the 7-Scenes and Neural RGB-D loaders of the pi^3 evaluation code
+torchvision             # imported by the same loaders
+imageio
+tqdm
+matplotlib              # imported by the trajectory metrics
+evo==1.31.1             # trajectory metrics (the version of the paper's evaluation)
+open3d==0.19.0          # ICP and normals of the reconstruction metrics (the version of the paper's evaluation)
+pytest                  # eval/tests

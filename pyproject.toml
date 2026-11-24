@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vg3r"
+version = "1.0.0"
+description = "VG3R: video generation model for feed-forward 3D reconstruction"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Jingong Chen"},
+    {name = "Qingwen Zhang"},
+    {name = "Linlian Jiang"},
+    {name = "Xinxin Zuo"},
+    {name = "Yang Wang"},
+    {name = "Chulwoo Pack"},
+    {name = "Kyle Gao"},
+    {name = "Patric Jensfelt"},
+    {name = "Kwanghee Won"},
+]
+keywords = ["3d reconstruction", "video depth", "camera pose estimation", "video diffusion", "feed-forward"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+# requirements.txt lists the versions every result was produced with
+dependencies = [
+    "torch>=2.4",
+    "torchvision",
+    "numpy",
+    "Pillow",
+    "einops",
+    "safetensors",
+    "peft>=0.17",
+    "diffusers",
+    "omegaconf",
+    "huggingface_hub",
+    "modelscope",
+    "imageio",
+    "imageio-ffmpeg",
+    "matplotlib",
+    "pandas",
+    "tqdm",
+    "tabulate",
+]
+
+[project.optional-dependencies]
+demo = ["gradio>=5.31,<6", "trimesh>=4.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vg3r*"]
+
+[tool.setuptools.package-data]
+vg3r = ["_dvd/model_config.yaml", "_dvd/LICENSE", "_dvd/NOTICE.md", "_vggt/LICENSE.txt", "_vggt/NOTICE.md"]
+
+[project.urls]
+Homepage = "https://kth-rpl.github.io/VG3R/"
+Repository = "https://github.com/KTH-RPL/VG3R"

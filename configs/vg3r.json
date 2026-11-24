@@ -1,0 +1,87 @@
+{
+  "model": {
+    "backbone": "Wan2.1-T2V-1.3B diffusion transformer (30 blocks, width 1536) and video VAE, with the LoRA of DVD v1.1 fine-tuned by us",
+    "lora": {
+      "rank": 512,
+      "alpha": 512,
+      "target_modules": [
+        "q",
+        "k",
+        "v",
+        "o",
+        "ffn.0",
+        "ffn.2"
+      ],
+      "tensors": 600,
+      "parameters": 699924480
+    },
+    "timestep": 500,
+    "text_context": "zeros, [1, 512, 4096]",
+    "depth": "D = 1 / max(x + c, tau) with tau = 1e-3; x = the decoded affine-invariant inverse depth in [0, 1] (mean of the three channels of the VAE output), c = the shift of ClipShift; frames are scaled to [-1, 1] before the VAE encoder",
+    "clipshift_head": {
+      "input": "final DiT tokens",
+      "pooling": "attention with one learned query, 12 heads",
+      "mlp_hidden": 256,
+      "output": "softplus + 1e-4 (c > 0), one per clip",
+      "parameters": "9.8 M"
+    },
+    "layertap_head": {
+      "input": "final DiT tokens and the outputs of blocks 10 and 20 (block indices 9 and 19), each with a layer normalization and a linear map, summed",
+      "width": 768,
+      "heads": 12,
+      "pair_blocks": 4,
+      "token_pooling": 1,
+      "trunk": "VGGT camera head trunk, depth 4",
+      "refinement_iterations": 4,
+      "output": "per frame: translation, rotation quaternion (xyzw), field of view (vertical, horizontal); world-to-camera relative to frame 0",
+      "tokens": "all tokens of every latent frame (576 at 288 x 512 pixels), with a 2D sinusoidal position embedding"
+    },
+    "head_parameters": 72396051
+  },
+  "inference": {
+    "input_pixels": 147456,
+    "input_size_note": "aspect ratio kept, about 288 x 512 pixels, sides multiples of 16, bicubic resize",
+    "frames_per_pass": "4k + 1 (the last frame is repeated to reach it)",
+    "window": 37,
+    "stride": 24,
+    "long_videos": "one pass over all frames gives the depth scale; windows give depth and cameras; window depth scaled to the whole-video pass by the median log ratio and blended linearly in log depth over overlaps; cameras chained by the rigid transform averaged over shared frames",
+    "intrinsics": "all frames share the intrinsic matrix formed from the predicted field of view of frame 0; a longer video takes the median over its windows; principal point at the image center",
+    "precision": {
+      "dit_and_vae": "bfloat16",
+      "lora": "float32 weights, applied under bfloat16 autocast",
+      "heads": "float32 with autocast off",
+      "matmul_tf32": false
+    },
+    "attention": "torch.nn.functional.scaled_dot_product_attention",
+    "hardware_of_the_paper": "NVIDIA GH200, PyTorch 2.11, CUDA 12.8",
+    "time_per_frame_ms": "74 to 84, depth and cameras (Table 2 of the paper)"
+  },
+  "training": {
+    "datasets": [
+      "ScanNet++",
+      "TartanAir V2",
+      "Matterport3D",
+      "ScanNet",
+      "PointOdyssey",
+      "Dynamic Replica",
+      "Spring",
+      "Virtual KITTI 2",
+      "DL3DV",
+      "Waymo",
+      "RealEstate10K"
+    ],
+    "initialization": "LoRA of DVD v1.1",
+    "trained_parameters": "the LoRA and the two heads (heads in float32)",
+    "optimizer": "AdamW",
+    "loss": "L = L_lat + 0.5 L_grad + L_dec + 4 L_mv + L_cam + L_c + 0.5 L_pts",
+    "camera_loss": {
+      "gamma": 0.6,
+      "w_t": 3,
+      "w_f": 0.5
+    },
+    "point_loss": "valid pixels of a grid of stride 4",
+    "multi_view_loss": "ScanNet++ DSLR and TartanAir clips, frame pairs 1, 2, 4 and 8 apart",
+    "data": "the four image sizes of the benchmarks; clips of 49 frames in a quarter of the steps; 60% of the microbatches from ScanNet, PointOdyssey, Spring, Virtual KITTI 2, Dynamic Replica, DL3DV-10K, the front camera of the Waymo Open Dataset and RealEstate10K, of which DL3DV-10K and Waymo supervise only the cameras and sparse points and RealEstate10K only the cameras",
+    "hardware": "128 NVIDIA GH200 GPUs, about 40 hours"
+  }
+}
